@@ -42,7 +42,6 @@ pub fn main() anyerror!void {
             // options without optarg first
             while (opt_cluster.len > 0) {
                 const opt = opt_cluster[0];
-                std.debug.print("{c}", .{opt});
                 switch (opt) {
                     '-' => {
                         if (std.mem.eql(u8, "-help", opt_cluster)) usage(0);
@@ -91,7 +90,6 @@ pub fn main() anyerror!void {
                     },
                 }
                 opt_cluster = opt_cluster[1..];
-                std.debug.print("{c}\n", .{opt_cluster[0]});
             }
         }
     }
