@@ -20,7 +20,7 @@ fn usage(exit_code: u8) void {
 pub fn main() anyerror!void {
     // lock mempages
     if (l2.mlockall(l2.MCL.CURRENT | l2.MCL.FUTURE | l2.MCL.ONFAULT) catch null) |_| {
-        log.info("Pages locked.", .{});        
+        log.info("Pages locked.", .{});
     } else {
         log.warn("Pages unlocked. Process might be susceptible to being sent to swap.", .{});
     }
@@ -41,7 +41,9 @@ pub fn main() anyerror!void {
             var opt_cluster = arg[1..];
             // options without optarg first
             while (opt_cluster.len > 0) {
-                switch (opt_cluster[0]) {
+                const opt = opt_cluster[0];
+                std.debug.print("{c}", .{opt});
+                switch (opt) {
                     '-' => {
                         if (std.mem.eql(u8, "-help", opt_cluster)) usage(0);
                         if (opt_cluster.len > 1) {
@@ -60,40 +62,36 @@ pub fn main() anyerror!void {
                         pgroup = true;
                     },
                     // options with arguments, next block
-                    'u', 'r', 'p', 's' => break,
+                    'u', 'r', 'p', 's' => {
+                        const optarg = if (opt_cluster.len > 1) opt_cluster[1..] else arg_it.nextPosix() orelse {
+                            log.err("No argument provided for option -{c}.", .{opt});
+                            usage(100);
+                            return;
+                        };
+                        switch (opt) {
+                            'u' => {
+                                do_not_kill = optarg[0..];
+                            },
+                            'p' => {
+                                terminal_psi = try std.fmt.parseFloat(f32, optarg);
+                            },
+                            'r' => {
+                                terminal_ram = try std.fmt.parseFloat(f64, optarg);
+                            },
+                            's' => {
+                                terminal_swap = try std.fmt.parseFloat(f64, optarg);
+                            },
+                            else => unreachable,
+                        }
+                        break;
+                    },
                     else => {
-                        log.err("Unrecognized option -{c}.", .{opt_cluster[0]});
+                        log.err("Unrecognized option -{c}.", .{opt});
                         usage(100);
                     },
                 }
                 opt_cluster = opt_cluster[1..];
-            }
-
-            // options with arguments
-            const optarg = if (opt_cluster.len > 1) opt_cluster[1..] else arg_it.nextPosix() orelse blk: {
-                log.err("No argument provided for option -{c}.", .{opt_cluster[0]});
-                usage(100);
-                break :blk "";
-            };
-
-            switch (opt_cluster[0]) {
-                'h', 'g', 'n' => {
-                    log.err("Option -{c} does not accept arguments.", .{opt_cluster[0]});
-                    usage(100);
-                },
-                'u' => {
-                    do_not_kill = optarg[0..];
-                },
-                'p' => {
-                    terminal_psi = try std.fmt.parseFloat(f32, optarg);
-                },
-                'r' => {
-                    terminal_ram = try std.fmt.parseFloat(f64, optarg);
-                },
-                's' => {
-                    terminal_swap = try std.fmt.parseFloat(f64, optarg);
-                },
-                else => unreachable,
+                std.debug.print("{c}\n", .{opt_cluster[0]});
             }
         }
     }
@@ -118,7 +116,7 @@ pub fn main() anyerror!void {
             if (k.poll(mem)) {
                 try k.trigger();
             }
-    
+
             const slp = k.calculateSleepTime(mem);
             std.debug.print("Adaptive sleep: {}ms\n", .{slp});
             std.os.nanosleep(0, slp * 1000000 - 1);
