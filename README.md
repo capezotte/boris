@@ -11,3 +11,4 @@ Behavior is very similar, except in a few implementation details on how access t
 - `-g`: kills process groups instead of individual processes.
 - `-n`: dry-run. Prints which process would be killed if running now.
 
+Use at your own risk. This thing is about as a reliable for killing processes as a 1966 Kombi is for climbing mountains.
